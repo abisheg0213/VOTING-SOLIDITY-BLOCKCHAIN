@@ -40,7 +40,7 @@ contract ballot
             Voters[reg].weight=1;
             Voters[reg].voted=false;
         }
-        if (now > starttime+ 20 seconds){
+        if (now > (starttime+ 20 seconds)){
             stage=Stage.vote;
             starttime=now;
         }
@@ -56,12 +56,12 @@ contract ballot
             candidate[prop].votecount+=Voters[msg.sender].weight;
             Voters[msg.sender].voted=true;
         }
-                if (now > starttime+ 20 seconds){
+                if (now > (starttime+ 20 seconds)){
             stage=Stage.done;
             starttime=now;
         }
     }
-    function winningProposal()public validstate(Stage.done) returns(uint8)
+    function winningProposal() constant public validstate(Stage.done) returns(uint8)
     {
         uint8 max=0;
         uint8 winp=0;
