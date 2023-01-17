@@ -10,6 +10,7 @@ contract ballot
     mapping (address => voter) Voters;
     enum Stage{init,reg,vote,done}
     Stage public stage=Stage.init;
+    uint public starttime;
     struct proposal
     {
         uint8 votecount;
@@ -21,6 +22,7 @@ contract ballot
         candidate.length=noofprop;
         Voters[msg.sender].weight=2;
         stage=Stage.reg;
+        starttime=now;
     }
     modifier validstate(Stage vstate)
     {
@@ -38,6 +40,10 @@ contract ballot
             Voters[reg].weight=1;
             Voters[reg].voted=false;
         }
+        if (now > starttime+ 20 seconds){
+            stage=Stage.vote;
+            starttime=now;
+        }
     }
     function vote(uint8 prop) public validstate(Stage.vote)
     {
@@ -49,6 +55,10 @@ contract ballot
         {
             candidate[prop].votecount+=Voters[msg.sender].weight;
             Voters[msg.sender].voted=true;
+        }
+                if (now > starttime+ 20 seconds){
+            stage=Stage.done;
+            starttime=now;
         }
     }
     function winningProposal()public validstate(Stage.done) returns(uint8)
