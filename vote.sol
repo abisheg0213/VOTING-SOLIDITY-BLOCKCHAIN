@@ -1,61 +1,68 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.4.10;
 contract ballot
 {
-struct voter
-{
-    uint8 weight;
-    bool voted;
-    uint8 vote;
-}
-struct candidate
-{
-    uint8 votecount;
-}
-address chperson;
-mapping (address => voter) voters;
-candidate [] c;
-function ballot(uint8 noofcan) public
-{
-    chperson=msg.sender;
-    voters[msg.sender].weight=2;
-    c.length=noofcan;
-}
-function register(address v) public
-{
-    if (msg.sender!=chperson)
+    struct voter
     {
-        return;
+        uint8 weight;
+        bool voted;
     }
-    else{
-        voters[v].voted=false;
-        voters[v].weight=1;
-    }
-}
-function vote(uint8 proposal) public
-{
-    voter g=voters[msg.sender];
-    if (g.voted=true || proposal >= c.length)
+    address chairperson;
+    mapping (address => voter) Voters;
+    enum Stage{init,reg,vote,done}
+    Stage public stage=Stage.init;
+    struct proposal
     {
-        return;
+        uint8 votecount;
     }
-    else{
-        c[proposal].votecount+=g.weight;
-        voters[msg.sender].voted=true;
-    }
-}
-function winningProposal() public constant returns(uint8)
-{
-    uint8 wincount=0;
-    uint winprop=0;
-    for (uint8 p=0;p < c.length;p++)
+    proposal [] candidate;
+    function ballot(uint8 noofprop)
     {
-        if (wincount<c[p].votecount)
+        chairperson=msg.sender;
+        candidate.length=noofprop;
+        Voters[msg.sender].weight=2;
+        stage=Stage.reg;
+    }
+    modifier validstate(Stage vstate)
+    {
+        require(stage == vstate);
+        _;
+    }
+    function register(address reg) public validstate(Stage.reg)
+    {
+        if (msg.sender!=chairperson)
         {
-            wincount=c[p].votecount;
-            winprop=p;
+            return;
+        }
+        else
+        {
+            Voters[reg].weight=1;
+            Voters[reg].voted=false;
         }
     }
-    return p;
-}
-
+    function vote(uint8 prop) public validstate(Stage.vote)
+    {
+        if (Voters[msg.sender].voted==true)
+        {
+            return;
+        }
+        else
+        {
+            candidate[prop].votecount+=Voters[msg.sender].weight;
+            Voters[msg.sender].voted=true;
+        }
+    }
+    function winningProposal()public validstate(Stage.done) returns(uint8)
+    {
+        uint8 max=0;
+        uint8 winp=0;
+        for (uint8 j=0;j<candidate.length;j++)
+        {
+            if (max<candidate[j].votecount)
+            {
+                max=candidate[j].votecount;
+                winp=j;
+            }
+        }
+        return winp;
+    }
 }
