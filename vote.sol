@@ -3,6 +3,7 @@ contract ballot
 {
     struct voter
     {
+        uint8 age;
         uint8 weight;
         bool voted;
     }
@@ -11,6 +12,7 @@ contract ballot
     enum Stage{init,reg,vote,done}
     Stage public stage=Stage.init;
     uint public starttime;
+    string public message;
     struct proposal
     {
         uint8 votecount;
@@ -29,7 +31,12 @@ contract ballot
         require(stage == vstate);
         _;
     }
-    function register(address reg) public validstate(Stage.reg)
+    modifier votage(uint x)
+    {
+        require(x>18);
+        _;
+    }
+    function register(address reg,uint8 a) public validstate(Stage.reg) votage(a)
     {
         if (msg.sender!=chairperson)
         {
@@ -39,6 +46,7 @@ contract ballot
         {
             Voters[reg].weight=1;
             Voters[reg].voted=false;
+            Voters[reg].age=a;
         }
         if (now > (starttime+ 20 seconds)){
             stage=Stage.vote;
@@ -63,6 +71,7 @@ contract ballot
     }
     function winningProposal() constant public validstate(Stage.done) returns(uint8)
     {
+        message="dada";
         uint8 max=0;
         uint8 winp=0;
         for (uint8 j=0;j<candidate.length;j++)
