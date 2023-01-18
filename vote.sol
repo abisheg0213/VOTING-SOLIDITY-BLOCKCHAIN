@@ -36,6 +36,11 @@ contract ballot
         require(x>18);
         _;
     }
+    modifier votestage(bool g)
+    {
+        require(g==false);
+        _;
+    }
     function register(address reg,uint8 a) public validstate(Stage.reg) votage(a)
     {
         if (msg.sender!=chairperson)
@@ -53,17 +58,10 @@ contract ballot
             starttime=now;
         }
     }
-    function vote(uint8 prop) public validstate(Stage.vote)
+    function vote(uint8 prop) public validstate(Stage.vote) votestage(Voters[msg.sender].voted)
     {
-        if (Voters[msg.sender].voted==true)
-        {
-            return;
-        }
-        else
-        {
             candidate[prop].votecount+=Voters[msg.sender].weight;
             Voters[msg.sender].voted=true;
-        }
                 if (now > (starttime+ 20 seconds)){
             stage=Stage.done;
             starttime=now;
