@@ -11,18 +11,23 @@ contract ballot
         uint votecount;
         // string canname;
     }
+    enum Stage{init,reg,vote,done}
+    Stage public stage=Stage.init;
     address chairperson;
     mapping (address => voter) Voter;
     candidate [] cans;
     address [] voters;
+    uint starttime;
     // uint public v;
     function ballot(uint8 noofcandidates)
     {
         chairperson=msg.sender;
+        stage=Stage.reg;
         cans.length=noofcandidates;
         Voter[msg.sender].weight=2;
         Voter[msg.sender].voted=false;
         voters.push(chairperson);
+        starttime=now;
     }
     modifier onlyby(address s)
     {
@@ -34,11 +39,20 @@ contract ballot
         require(Voter[h].voted==false);
         _;
     }
-    function register(address vt) public onlyby(msg.sender)
+    modifier reqstage(Stage t)
+    {
+        require(stage==t);
+        _;
+    }
+    function register(address vt) public onlyby(msg.sender) reqstage(Stage.reg)
     {
         Voter[vt].weight=1;
         Voter[vt].voted=false;
         voters.push(vt);
+         if (now > (starttime+ 20 seconds)){
+            stage=Stage.vote;
+            starttime=now;
+        }
     }
     function regvoter(address r) returns(bool)
     {
@@ -59,7 +73,7 @@ contract ballot
         }
         return avail;
     }
-    function vote(uint8 i) public vervoted(msg.sender) 
+    function vote(uint8 i) public vervoted(msg.sender) reqstage(Stage.vote)
     {
         if(regvoter(msg.sender)==true)
         {
@@ -70,8 +84,12 @@ contract ballot
         {
             return;
         }
+         if (now > (starttime+ 20 seconds)){
+            stage=Stage.done;
+            starttime=now;
+        }
     }
-    function winningProposal() constant public returns(uint8)
+    function winningProposal() constant public reqstage(Stage.done) returns(uint8)
     {
         uint max=0;
         uint8 winp=0;
