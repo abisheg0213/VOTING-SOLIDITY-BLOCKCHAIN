@@ -3,80 +3,83 @@ contract ballot
 {
     struct voter
     {
-        uint8 age;
-        uint8 weight;
+        uint weight;
         bool voted;
     }
-    address chairperson;
-    mapping (address => voter) Voters;
-    enum Stage{init,reg,vote,done}
-    Stage public stage=Stage.init;
-    uint public starttime;
-    string public message;
-    struct proposal
+    struct candidate
     {
-        uint8 votecount;
+        uint votecount;
+        // string canname;
     }
-    proposal [] candidate;
-    function ballot(uint8 noofprop)
+    address chairperson;
+    mapping (address => voter) Voter;
+    candidate [] cans;
+    address [] voters;
+    // uint public v;
+    function ballot(uint8 noofcandidates)
     {
         chairperson=msg.sender;
-        candidate.length=noofprop;
-        Voters[msg.sender].weight=2;
-        stage=Stage.reg;
-        starttime=now;
+        cans.length=noofcandidates;
+        Voter[msg.sender].weight=2;
+        Voter[msg.sender].voted=false;
+        voters.push(chairperson);
     }
-    modifier validstate(Stage vstate)
+    modifier onlyby(address s)
     {
-        require(stage == vstate);
+        require(s==chairperson);
         _;
     }
-    modifier votage(uint x)
+    modifier vervoted(address h)
     {
-        require(x>18);
+        require(Voter[h].voted==false);
         _;
     }
-    modifier votestage(bool g)
+    function register(address vt) public onlyby(msg.sender)
     {
-        require(g==false);
-        _;
+        Voter[vt].weight=1;
+        Voter[vt].voted=false;
+        voters.push(vt);
     }
-    function register(address reg,uint8 a) public validstate(Stage.reg) votage(a)
+    function regvoter(address r) returns(bool)
     {
-        if (msg.sender!=chairperson)
+        uint y=0;
+        bool avail;
+        for(uint i=0;i<voters.length;i++)
         {
-            return;
+            // v=i;
+            if(voters[i]==r)
+            {
+                avail=true;
+                y=1;
+            }
+        }
+        if (y==0)
+        {
+            avail=false;
+        }
+        return avail;
+    }
+    function vote(uint8 i) public vervoted(msg.sender) 
+    {
+        if(regvoter(msg.sender)==true)
+        {
+           cans[i].votecount+=Voter[msg.sender].weight;
+           Voter[msg.sender].voted=true;
         }
         else
         {
-            Voters[reg].weight=1;
-            Voters[reg].voted=false;
-            Voters[reg].age=a;
-        }
-        if (now > (starttime+ 20 seconds)){
-            stage=Stage.vote;
-            starttime=now;
+            return;
         }
     }
-    function vote(uint8 prop) public validstate(Stage.vote) votestage(Voters[msg.sender].voted)
+    function winningProposal() constant public returns(uint8)
     {
-            candidate[prop].votecount+=Voters[msg.sender].weight;
-            Voters[msg.sender].voted=true;
-                if (now > (starttime+ 20 seconds)){
-            stage=Stage.done;
-            starttime=now;
-        }
-    }
-    function winningProposal() constant public validstate(Stage.done) returns(uint8)
-    {
-        message="dada";
-        uint8 max=0;
+        uint max=0;
         uint8 winp=0;
-        for (uint8 j=0;j<candidate.length;j++)
+        for (uint8 j=0;j<cans.length;j++)
         {
-            if (max<candidate[j].votecount)
+            if (max<cans[j].votecount)
             {
-                max=candidate[j].votecount;
+                max=cans[j].votecount;
                 winp=j;
             }
         }
