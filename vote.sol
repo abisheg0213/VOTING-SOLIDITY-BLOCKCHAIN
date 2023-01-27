@@ -54,6 +54,11 @@ contract ballot
             starttime=now;
         }
     }
+    modifier bvalvoter(address h)
+    {
+        require(regvoter(h)==true);
+        _;
+    }
     function regvoter(address r) returns(bool)
     {
         uint y=0;
@@ -73,17 +78,10 @@ contract ballot
         }
         return avail;
     }
-    function vote(uint8 i) public vervoted(msg.sender) reqstage(Stage.vote)
+    function vote(uint8 i) public vervoted(msg.sender) reqstage(Stage.vote) bvalvoter(msg.sender)
     {
-        if(regvoter(msg.sender)==true)
-        {
            cans[i].votecount+=Voter[msg.sender].weight;
            Voter[msg.sender].voted=true;
-        }
-        else
-        {
-            return;
-        }
          if (now > (starttime+ 20 seconds)){
             stage=Stage.done;
             starttime=now;
