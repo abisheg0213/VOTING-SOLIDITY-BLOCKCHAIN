@@ -1,4 +1,4 @@
-pragma solidity ^0.4.10;
+pragma solidity ^0.8.14;
 contract ballot
 {
     struct voter
@@ -15,20 +15,30 @@ contract ballot
     Stage public stage=Stage.init;
     address chairperson;
     mapping (address => voter) Voter;
-    candidate [] cans;
+    candidate [3] cans;
     address [] voters;
-    uint starttime;
-    // uint public v;
-    function ballot(uint8 noofcandidates)
+
+    constructor()
     {
         chairperson=msg.sender;
         stage=Stage.reg;
-        cans.length=noofcandidates;
+        // cans=new candidate[](noofcandidates);
         Voter[msg.sender].weight=2;
         Voter[msg.sender].voted=false;
         voters.push(chairperson);
-        starttime=now;
+      
     }
+    function change_state(uint k) public onlyby(msg.sender){
+        if (k==2)
+        {
+            stage=Stage.vote;
+        }
+        if(k==3)
+        {
+            stage=Stage.done;
+        }
+    }
+
     modifier onlyby(address s)
     {
         require(s==chairperson);
@@ -49,17 +59,14 @@ contract ballot
         Voter[vt].weight=1;
         Voter[vt].voted=false;
         voters.push(vt);
-         if (now > (starttime+ 20 seconds)){
-            stage=Stage.vote;
-            starttime=now;
-        }
+       
     }
     modifier bvalvoter(address h)
     {
         require(regvoter(h)==true);
         _;
     }
-    function regvoter(address r) returns(bool)
+    function regvoter(address r) public returns(bool)
     {
         uint y=0;
         bool avail;
@@ -82,12 +89,8 @@ contract ballot
     {
            cans[i].votecount+=Voter[msg.sender].weight;
            Voter[msg.sender].voted=true;
-         if (now > (starttime+ 20 seconds)){
-            stage=Stage.done;
-            starttime=now;
-        }
     }
-    function winningProposal() constant public reqstage(Stage.done) returns(uint8)
+    function winningProposal() view public reqstage(Stage.done) returns(uint8)
     {
         uint max=0;
         uint8 winp=0;
